@@ -1,0 +1,161 @@
+
+<!-- Ampel is set to "red" if no record of ampel exists on entity; otherwise, ampel status is shown -->
+<p class="ampel_dotted" style="background-color: {{record.ampel.status|default:'red'}}"></p>
+
+
+ <style>
+    .ampel_dotted {
+        border: 2px solid black;
+        width: 20px;
+        height: 20px;
+        border-radius: 30px;
+    }
+ </style>
+
+<!-- 
+
+{% if user.is_authenticated %}
+
+<div class="d-inline-flex align-items-center">
+    <div class="ampel_circle ampel_{{record.pk}} ml-2" id="ampel_green_{{record.pk}}"></div>
+    <div class="ampel_circle ampel_{{record.pk}} mx-1" id="ampel_yellow_{{record.pk}}"></div>
+    <div class="ampel_circle ampel_{{record.pk}} mr-2" id="ampel_red_{{record.pk}}"></div>
+    {% if record.ampel.note %}
+    <button class="btn btn-sm btn-primary my-auto" id="note_button_{{record.pk}}">Note</button>
+    {% else %}
+    <button class="btn btn-sm btn-secondary my-auto" id="note_button_{{record.pk}}">Note</button>
+    {% endif %}
+</div>
+<script>
+    (function(){
+    const ampel_status = "{{record.ampel.status|escapejs}}";
+    const record_id = "{{record.pk|escapejs}}"
+    
+    let note_text = "{{record.ampel.note|escapejs}}";
+
+  /**
+    if (ampel_status === ""){
+        ampel_status = "{{record.ampel.status|escapejs}}"
+    }
+    **/
+    if (ampel_status){
+    $(`#ampel_${ampel_status}_${record_id}`).css("background-color", ampel_status);
+    $(`#ampel_${ampel_status}_${record_id}`).addClass("ampel_active");
+    } else {
+    $(`#ampel_red_${record_id}`).css("background-color", "red");
+    $(`#ampel_red_${record_id}`).addClass("ampel_active");
+    }
+
+    
+
+    $(".ampel_circle").on("mouseenter", (el)=>{
+        el_color = el.target.id.split("_")[1];
+        $(el.target).css("background-color", el_color)
+    });
+    
+    $(".ampel_circle").on("mouseout", (el)=> {
+        el_color = el.target.id.split("_")[1];
+
+        if (!$(el.target).hasClass("ampel_active")){
+        $(el.target).css("background-color", "darkgrey");
+        }
+    });
+
+    $("#note_button_"+record_id).on("click", getNoteText)
+
+    let arr = ["ampel_green_{{record.pk}}", "ampel_yellow_{{record.pk}}", "ampel_red_{{record.pk}}"]
+    arr.forEach((el)=>{
+        $(`#${el}`).on("click", updateAmpelResponse);
+    })
+    //$(".ampel_circle").on("click", updateAmpelResponse)
+    
+    function updateAmpelResponse(el){
+        //console.log(el.target.id)
+        status = el.target.id.split("_")[1];
+        console.log(status)
+       
+        
+        const ampel_id = "{{record.id|escapejs}}";
+            
+     
+        $.ajax({
+            type: "POST",
+            url: "{% url 'apis_ampel:update_ampel_instance'%}",
+            data: {
+              "id": ampel_id,
+              "status": status,
+            },
+            beforeSend: function (request) {
+              let csrftoken = getCookie("csrftoken");
+              request.setRequestHeader("X-CSRFToken", csrftoken);
+          },
+            success: function (result) {
+               $(`.ampel_${record_id}`).css("background-color", "darkgrey");
+               $(`.ampel_${record_id}`).removeClass("ampel_active")
+               //ampel_status = status;
+               $(`#ampel_${status}_${record_id}`).css("background-color", status)
+               $(`#ampel_${status}_${record_id}`).addClass("ampel_active");
+               //todo: alert if success is false
+            },
+            dataType: "json"
+          });
+        
+    }
+
+    function getNoteText(){
+        ampel_id = "{{record.id|escapejs}}";
+
+      
+        new_text = prompt("Update Note", note_text);
+   
+        if (new_text != note_text && new_text != null){
+            updateNoteResponse(new_text)
+        }
+        }
+
+    
+    function updateNoteResponse(text){
+        $.ajax({
+            type: "POST",
+            url: "{% url 'apis_ampel:update_note_text' %}",
+            data: {
+              "id": ampel_id,
+              "note_text": text,
+            },
+            beforeSend: function (request) {
+              let csrftoken = getCookie("csrftoken");
+              request.setRequestHeader("X-CSRFToken", csrftoken);
+          },
+            success: function (result) {
+             note_text = text;
+             if (note_text.trim().length === 0){
+                $(`#note_button_${record_id}`).removeClass("btn-primary");
+                $(`#note_button_${record_id}`).addClass("btn-secondary");
+             } else {
+                $(`#note_button_${record_id}`).removeClass("btn-secondary");
+                $(`#note_button_${record_id}`).addClass("btn-primary");
+             }
+            },
+            dataType: "json"
+          });
+
+    }
+    
+}())
+    
+</script>
+<style> 
+    .ampel_circle{
+        background-color:darkgrey;
+        border: 2px solid black;
+        width: 20px;
+        height: 20px;
+        border-radius: 30px;
+    }
+</style>
+
+{% else %}
+<div class="d-inline-flex">
+{% include 'ampel/ampel_template_column.html' with instance=record %}
+</div>
+{% endif %} -->

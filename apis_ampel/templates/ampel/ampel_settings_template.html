@@ -1,0 +1,63 @@
+{% extends "webpage/base.html" %}
+
+{% block content %}
+<h1 class="mt-5 text-center">Ampel Settings </h1>
+<div class="w-25 mx-auto text-center mb-4">
+    <a class="" href="{% url 'apis_ampel:ampel_docs' %}">Ampel Documentation</a>
+</div>
+<p class="mx-auto w-25">Toggle the display of the Ampel-status for instances of each model. Only changes if the indicator is displayed – changes made here don't affect any backend data.</p>
+
+<div class="w-25 mx-auto my-5">
+
+    <table class="table table-sm table-striped">
+        <tr><th><h4 class="p-2">Model</h4></th>
+        <th><h4 class="p-2 text-right">Display</h4></th></tr>
+    {% for m in models %}
+    <tr><td class="mx-3 pl-3">{{m.content_type.name|title}}</td><td class="text-right pr-4">{% if m.active %} <button class="btn btn-sm btn-success" onclick="StatusClickHandler('{{m.id}}')">ON</button> {% else %}<button class="btn btn-sm btn-danger" onclick="StatusClickHandler('{{m.id}}')">OFF</button> {% endif %}</td></tr>
+    {% endfor %}
+    </table>
+</div>
+
+<script>
+
+    function StatusClickHandler(el){
+        let element = event.target
+           $.ajax({
+            type:"POST", 
+            url: "{% url 'apis_ampel:update_ampel_view' ampel_id='99999999' %}".replace("99999999", el), 
+            beforeSend: function (request) {
+              let csrftoken = getCookie("csrftoken");
+              request.setRequestHeader("X-CSRFToken", csrftoken);
+          },
+            success: function (result) {
+               console.log(result);
+               if (!result.success){
+               alert(result.msg)
+               } else {
+                let new_status = result.status;
+                $(element).removeClass("btn-success")
+                $(element).removeClass("btn-danger")
+
+                if (new_status){
+                    $(element).addClass("btn-success")
+                    $(element).text("ON")
+                } else {
+                    $(element).addClass("btn-danger")
+                    $(element).text("OFF")
+                }
+               }
+              
+            },
+            dataType: "json"
+          });
+        }
+    
+</script>
+<style>
+    body{
+        height:auto !important;
+    }
+    
+</style>
+{% endblock content %}
+

@@ -1,0 +1,139 @@
+
+{% if user.is_authenticated %}
+
+<div class="d-inline-flex align-items-center">
+    <div class="ampel_circle ampel_{{instance.pk}} ml-2" id="ampel_green_{{instance.pk}}"></div>
+    <div class="ampel_circle ampel_{{instance.pk}} mx-1" id="ampel_yellow_{{instance.pk}}"></div>
+    <div class="ampel_circle ampel_{{instance.pk}} mr-2" id="ampel_red_{{instance.pk}}"></div>
+    {% if instance.ampel.note %}
+    <button class="btn btn-sm btn-primary my-auto" id="note_button_{{instance.pk}}">Note</button>
+    {% else %}
+    <button class="btn btn-sm btn-secondary my-auto" id="note_button_{{instance.pk}}">Note</button>
+    {% endif %}
+</div>
+<script>
+    (function(){
+    const ampel_status = "{{instance.ampel.status|escapejs}}";
+    const instance_id = "{{instance.pk|escapejs}}"
+    
+    let note_text = "{{instance.ampel.note|escapejs}}";
+
+
+    if (ampel_status){
+    $(`#ampel_${ampel_status}_${instance_id}`).css("background-color", ampel_status);
+    $(`#ampel_${ampel_status}_${instance_id}`).addClass("ampel_active");
+    } else {
+    $(`#ampel_red_${instance_id}`).css("background-color", "red");
+    $(`#ampel_red_${instance_id}`).addClass("ampel_active");
+    }
+
+    
+
+    $(".ampel_circle").on("mouseenter", (el)=>{
+        el_color = el.target.id.split("_")[1];
+        $(el.target).css("background-color", el_color)
+    });
+    
+    $(".ampel_circle").on("mouseout", (el)=> {
+        el_color = el.target.id.split("_")[1];
+
+        if (!$(el.target).hasClass("ampel_active")){
+        $(el.target).css("background-color", "darkgrey");
+        }
+    });
+
+    $("#note_button_"+instance_id).on("click", getNoteText)
+
+    let arr = ["ampel_green_{{instance.pk}}", "ampel_yellow_{{instance.pk}}", "ampel_red_{{instance.pk}}"]
+    arr.forEach((el)=>{
+        $(`#${el}`).on("click", updateAmpelResponse);
+    })
+    
+    function updateAmpelResponse(el){
+        status = el.target.id.split("_")[1];
+       
+        
+        const ampel_id = "{{instance.id|escapejs}}";
+            
+     
+        $.ajax({
+            type: "POST",
+            url: "{% url 'apis_ampel:update_ampel_instance'%}",
+            data: {
+              "id": ampel_id,
+              "status": status,
+            },
+            beforeSend: function (request) {
+              let csrftoken = getCookie("csrftoken");
+              request.setRequestHeader("X-CSRFToken", csrftoken);
+          },
+            success: function (result) {
+               $(`.ampel_${instance_id}`).css("background-color", "darkgrey");
+               $(`.ampel_${instance_id}`).removeClass("ampel_active")
+               //ampel_status = status;
+               $(`#ampel_${status}_${instance_id}`).css("background-color", status)
+               $(`#ampel_${status}_${instance_id}`).addClass("ampel_active");
+               //todo: alert if success is false
+            },
+            dataType: "json"
+          });
+        
+    }
+
+    function getNoteText(){
+        ampel_id = "{{instance.id|escapejs}}";
+
+      
+        new_text = prompt("Update Note", note_text);
+   
+        if (new_text != note_text && new_text != null){
+            updateNoteResponse(new_text)
+        }
+        }
+
+    
+    function updateNoteResponse(text){
+        $.ajax({
+            type: "POST",
+            url: "{% url 'apis_ampel:update_note_text' %}",
+            data: {
+              "id": ampel_id,
+              "note_text": text,
+            },
+            beforeSend: function (request) {
+              let csrftoken = getCookie("csrftoken");
+              request.setRequestHeader("X-CSRFToken", csrftoken);
+          },
+            success: function (result) {
+             note_text = text;
+             if (note_text.trim().length === 0){
+                $(`#note_button_${instance_id}`).removeClass("btn-primary");
+                $(`#note_button_${instance_id}`).addClass("btn-secondary");
+             } else {
+                $(`#note_button_${instance_id}`).removeClass("btn-secondary");
+                $(`#note_button_${instance_id}`).addClass("btn-primary");
+             }
+            },
+            dataType: "json"
+          });
+
+    }
+    
+}())
+    
+</script>
+<style> 
+    .ampel_circle{
+        background-color:darkgrey;
+        border: 2px solid black;
+        width: 20px;
+        height: 20px;
+        border-radius: 30px;
+    }
+</style>
+
+{% else %}
+<div class="d-inline-flex">
+{% include 'ampel/ampel_template_column.html' with record=instance %}
+</div>
+{% endif %}

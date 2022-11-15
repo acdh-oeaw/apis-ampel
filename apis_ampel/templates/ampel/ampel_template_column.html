@@ -1,0 +1,13 @@
+
+<!-- Ampel is set to "red" if no instance of ampel exists on entity; otherwise, ampel status is shown -->
+<div class="ampel_dotted" style="background-color: {{record.ampel.status|default:'red'}}"></div>
+
+
+ <style>
+    .ampel_dotted {
+        border: 2px solid black;
+        width: 20px;
+        height: 20px;
+        border-radius: 30px;
+    }
+ </style>
